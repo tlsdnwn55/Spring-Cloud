@@ -29,16 +29,18 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
         http.csrf().disable();
 //        http.authorizeRequests().antMatchers("/users/**").permitAll();
 
-        http.authorizeRequests().antMatchers("/**")
-                .access("hasIpAddress('" + "127.0.0.1" + "')") // my Ip
+        http.authorizeRequests().antMatchers("/error/**").permitAll()
+                .antMatchers("/**")
+                .access("hasIpAddress('" + "192.168.0.14" + "')") // my Ip
                 .and()
                 .addFilter(getAuthenticationFilter());
         http.headers().frameOptions().disable();
     }
 
     private AuthenticationFilter getAuthenticationFilter() throws Exception {
-        AuthenticationFilter authenticationFilter = new AuthenticationFilter();
-        authenticationFilter.setAuthenticationManager(authenticationManager());
+        AuthenticationFilter authenticationFilter =
+                new AuthenticationFilter(authenticationManager(),userService,env);
+//        authenticationFilter.setAuthenticationManager(authenticationManager());
 
         return authenticationFilter;
     }
