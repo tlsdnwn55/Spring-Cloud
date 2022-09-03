@@ -1,5 +1,6 @@
 package com.example.userservice.service;
 
+import com.example.userservice.client.OrderServiceClient;
 import com.example.userservice.dto.UserDto;
 import com.example.userservice.jpa.UserEntity;
 import com.example.userservice.jpa.UserRepository;
@@ -29,8 +30,9 @@ public class UserServiceImpl implements UserService {
     UserRepository userRepository;
     BCryptPasswordEncoder passwordEncoder;
     Environment env;
-    RestTemplate restTemplate;
+    RestTemplate restTemplate; // 사용 안하지만 코드 수정하기 귀찮아서 냅둠
 
+    OrderServiceClient orderServiceClient;
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity userEntity = userRepository.findByEmail(username);
@@ -48,11 +50,13 @@ public class UserServiceImpl implements UserService {
     public UserServiceImpl(UserRepository userRepository,
                            BCryptPasswordEncoder passwordEncoder,
                            Environment env,
-                           RestTemplate restTemplate) {
+                           RestTemplate restTemplate,
+                           OrderServiceClient orderServiceClient) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.env = env;
         this.restTemplate = restTemplate;
+        this.orderServiceClient = orderServiceClient;
     }
 
     @Override
@@ -82,12 +86,18 @@ public class UserServiceImpl implements UserService {
         UserDto userDto = new ModelMapper().map(userEntity, UserDto.class);
 
 //        List<ResponseOrder> orders = new ArrayList<>();
-        String orderUrl = "http://127.0.0.1:8000/order-service/%s/orders";
-        ResponseEntity<List<ResponseOrder>> orderList = restTemplate.exchange(orderUrl, HttpMethod.GET, null,
-                new ParameterizedTypeReference<List<ResponseOrder>>() {
-        });
+        /* Using as rest template*/
+//        String orderUrl = "http://127.0.0.1:8000/order-service/%s/orders";
+//        String orderUrl = String.format(env.getProperty("order_service.url"),userId);
+//        ResponseEntity<List<ResponseOrder>> orderList = restTemplate.exchange(orderUrl, HttpMethod.GET, null,
+//                new ParameterizedTypeReference<List<ResponseOrder>>() {
+//        });
+//        List<ResponseOrder> ordersList = orderList.getBody();
 
-        userDto.setOrders(orders);
+        /* Using as feign client */
+        List<ResponseOrder> ordersList = orderServiceClient.getOrders(userId);
+
+        userDto.setOrders(ordersList);
 
         return userDto;
     }
