@@ -52,7 +52,7 @@ public class OrderController {
         ResponseOrder responseOrder = mapper.map(createOrder,ResponseOrder.class);
 
         /* send this order to the kafka */
-        kafkaProducer.send("example-category-topic", orderDto);
+        kafkaProducer.send("example-catalog-topic", orderDto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(responseOrder);
     }
