@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
@@ -34,8 +36,9 @@ public class UserServiceImpl implements UserService {
     BCryptPasswordEncoder passwordEncoder;
     Environment env;
     RestTemplate restTemplate; // 사용 안하지만 코드 수정하기 귀찮아서 냅둠
-
     OrderServiceClient orderServiceClient;
+    CircuitBreakerFactory circuitBreakerFactory; 
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity userEntity = userRepository.findByEmail(username);
@@ -54,12 +57,14 @@ public class UserServiceImpl implements UserService {
                            BCryptPasswordEncoder passwordEncoder,
                            Environment env,
                            RestTemplate restTemplate,
-                           OrderServiceClient orderServiceClient) {
+                           OrderServiceClient orderServiceClient,
+                           CircuitBreakerFactory circuitBreakerFactory) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.env = env;
         this.restTemplate = restTemplate;
         this.orderServiceClient = orderServiceClient;
+        this.circuitBreakerFactory = circuitBreakerFactory;
     }
 
     @Override
@@ -107,7 +112,12 @@ public class UserServiceImpl implements UserService {
 //        }
 
         /* ErrorDecoder */
-        List<ResponseOrder> ordersList = orderServiceClient.getOrders(userId);
+//        List<ResponseOrder> ordersList = orderServiceClient.getOrders(userId);
+
+        CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitbreaker");
+        List<ResponseOrder> ordersList = circuitBreaker.run(() -> orderServiceClient.getOrders(userId),
+                throwable -> new ArrayList<>());
+
         userDto.setOrders(ordersList);
 
         return userDto;
