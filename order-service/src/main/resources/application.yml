@@ -39,3 +39,9 @@ eureka:
 logging:
   level:
     com.example.catalogsservice: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, httptrace , info, metrics, prometheus
