@@ -37,7 +37,7 @@ public class UserServiceImpl implements UserService {
     Environment env;
     RestTemplate restTemplate; // 사용 안하지만 코드 수정하기 귀찮아서 냅둠
     OrderServiceClient orderServiceClient;
-    CircuitBreakerFactory circuitBreakerFactory; 
+    CircuitBreakerFactory circuitBreakerFactory;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -113,10 +113,12 @@ public class UserServiceImpl implements UserService {
 
         /* ErrorDecoder */
 //        List<ResponseOrder> ordersList = orderServiceClient.getOrders(userId);
-
+        log.info("Before call orders microservice");
         CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitbreaker");
         List<ResponseOrder> ordersList = circuitBreaker.run(() -> orderServiceClient.getOrders(userId),
                 throwable -> new ArrayList<>());
+
+        log.info("After call orders microservice");
 
         userDto.setOrders(ordersList);
 
